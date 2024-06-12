@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use thiserror::Error;
 
-use crate::Number;
+use crate::{find_pivot_element, get_vector, FindPivotElementResult::Found};
 
 #[derive(Debug, Error)]
 pub enum TableauCreationError {
@@ -15,18 +15,12 @@ pub enum TableauCreationError {
 }
 
 #[derive(Debug, Clone)]
-pub struct Tableau<T>
-where
-    T: Number,
-{
-    pub rows: Vec<Vec<T>>,
+pub struct Tableau {
+    pub rows: Vec<Vec<f64>>,
 }
 
-impl<T> Tableau<T>
-where
-    T: Number,
-{
-    pub fn new(rows: Vec<Vec<T>>) -> Result<Tableau<T>, TableauCreationError> {
+impl Tableau {
+    pub fn new(rows: Vec<Vec<f64>>) -> Result<Tableau, TableauCreationError> {
         if rows.len() < 2 {
             return Err(TableauCreationError::NotEnoughRows(rows.len()));
         }
@@ -49,7 +43,7 @@ where
         Ok(Self { rows })
     }
 
-    pub fn apply_all(&mut self, function: impl Fn(T) -> T) {
+    pub fn apply_all(&mut self, function: impl Fn(f64) -> f64) {
         for row in &mut self.rows {
             for cell in row {
                 let cell_value = *cell;
@@ -58,14 +52,14 @@ where
         }
     }
 
-    pub fn apply_row(&mut self, row_index: usize, function: impl Fn(T) -> T) {
+    pub fn apply_row(&mut self, row_index: usize, function: impl Fn(f64) -> f64) {
         for cell in &mut self.rows[row_index] {
             let cell_value = *cell;
             *cell = function(cell_value);
         }
     }
 
-    pub fn apply_column(&mut self, column_index: usize, function: impl Fn(T) -> T) {
+    pub fn apply_column(&mut self, column_index: usize, function: impl Fn(f64) -> f64) {
         for row in &mut self.rows {
             let cell = &mut row[column_index];
             let cell_value = *cell;
@@ -82,10 +76,7 @@ where
     }
 }
 
-impl<T> Display for Tableau<T>
-where
-    T: Number,
-{
+impl Display for Tableau {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let column_widths: Vec<usize> = (0..self.rows[0].len())
             .map(|column_index| self.get_column_width(column_index))
@@ -135,10 +126,28 @@ where
                 write!(f, "{:-<total_width$}", "-")?;
             }
 
-            if row_index < self.rows.len() - 1 {
-                writeln!(f)?;
+            writeln!(f)?;
+        }
+
+        let vector = get_vector(self);
+        write!(f, "Vector: (")?;
+        for (index, value) in vector.iter().enumerate() {
+            write!(f, "{}", value)?;
+            if index == 0 {
+                write!(f, "| ")?;
+            } else if index < vector.len() - 1 {
+                write!(f, ", ")?;
             }
         }
+        write!(f, ")")?;
+
+        let pivot_element = match find_pivot_element(self) {
+            Found(point) => point,
+            _ => return Ok(()),
+        };
+
+        write!(f, "\nPivot element: {:?}", pivot_element)?;
+
         Ok(())
     }
 }
