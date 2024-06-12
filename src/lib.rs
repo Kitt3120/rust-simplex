@@ -220,11 +220,11 @@ pub fn optimize(tableau: Tableau) -> (OptimizeResult, Vec<Tableau>) {
                     })
                     .collect::<Vec<(usize, f64)>>();
 
-                let is_degnerate = nbv_indexes_with_target_row_values
+                let is_degenerate = nbv_indexes_with_target_row_values
                     .iter()
                     .any(|(_, value)| *value == 0.0);
 
-                if !is_degnerate {
+                if !is_degenerate {
                     return (OptimizeResult::Optimal, tableaus);
                 }
 
